@@ -1,20 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
-#include <stdbool.h>
 
 #include "htmd.h"
 #include "markdown.h"
-
-#define BUFFER_SIZE 1024
-
-void syscall_error(int ret, char *proc_name, char *syscall_name) {
-    if(ret == -1) {
-        fprintf(stderr, "%s: ", proc_name);
-        perror(syscall_name);
-        exit(1);
-    }
-}
+#include "misc.h"
 
 int main(int argc, char *argv[]) {
     int in_fd = STDIN_FILENO;
