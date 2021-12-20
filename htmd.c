@@ -18,6 +18,9 @@ int main(int argc, char *argv[]) {
 
     int user_cursor = 0;
 
+    struct markdown_parser mdp;
+    markdown_parser_init(&mdp, argv[0]);
+
     while(1) {
         struct parser_char pch;
 
@@ -56,7 +59,7 @@ int main(int argc, char *argv[]) {
             pch.end = 1;
         }
 
-        markdown_parse(&pch);
+        markdown_parse(&mdp, &pch);
 
         if(pch.end && pch.move_count >= 0) {
             break;
@@ -78,4 +81,6 @@ int main(int argc, char *argv[]) {
 
         user_cursor += pch.move_count;
     }
+
+    markdown_parser_close(&mdp);
 }
