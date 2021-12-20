@@ -1,8 +1,10 @@
 #include <unistd.h>
 
 #include "htmd.h"
-#include "markdown.h"
+#include "paragraph.h"
 #include "misc.h"
+#include "outstream.h"
+#include "markdown.h"
 
 int main(int argc, char *argv[]) {
     int in_fd = STDIN_FILENO;

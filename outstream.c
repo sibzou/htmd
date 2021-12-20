@@ -1,5 +1,6 @@
 #include <unistd.h>
 
+#include "misc.h"
 #include "outstream.h"
 
 void out_stream_init(struct out_stream *s, char *proc_name) {
