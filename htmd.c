@@ -1,0 +1,93 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdbool.h>
+
+#include "htmd.h"
+#include "markdown.h"
+
+#define BUFFER_SIZE 1024
+
+void syscall_error(int ret, char *proc_name, char *syscall_name) {
+    if(ret == -1) {
+        fprintf(stderr, "%s: ", proc_name);
+        perror(syscall_name);
+        exit(1);
+    }
+}
+
+int main(int argc, char *argv[]) {
+    int in_fd = STDIN_FILENO;
+
+    char in_buf[BUFFER_SIZE];
+    int in_buf_len = 0;
+
+    int in_buf_unparse_start = BUFFER_SIZE;
+
+    char backlog[BUFFER_SIZE];
+    int backlog_start = 0;
+    int backlog_len = 0;
+
+    int user_cursor = 0;
+
+    while(1) {
+        struct parser_char pch;
+
+        // if we are out of saved data, we continue to read the input stream
+        if(user_cursor >= backlog_len + in_buf_len) {
+            user_cursor -= in_buf_unparse_start > in_buf_len ? in_buf_len : in_buf_unparse_start;
+
+            // copying unparsed data from the read buffer to the backlog
+            for(int i = in_buf_unparse_start; i < in_buf_len; i++) {
+                if(backlog_len < BUFFER_SIZE) {
+                    backlog[(backlog_start + backlog_len) % BUFFER_SIZE] = in_buf[i];
+                    backlog_len++;
+                } else {
+                    // we force parsing if there is no more space in the backlog
+                    markdown_parse_force(backlog[backlog_start]);
+                    backlog[backlog_start] = in_buf[i];
+                    backlog_start = (backlog_start + 1) % BUFFER_SIZE;
+
+                    // after forced parsing, we start parse again from the first saved data
+                    user_cursor = 0;
+                }
+            }
+
+            in_buf_len = read(in_fd, in_buf, BUFFER_SIZE);
+            syscall_error(in_buf_len, argv[0], "read");
+        }
+
+        // get the real character from user_cursor
+        if(user_cursor < backlog_len) {
+            pch.c = backlog[(backlog_start + user_cursor) % BUFFER_SIZE];
+            pch.end = 0;
+        } else if(user_cursor < backlog_len + in_buf_len) {
+            pch.c = in_buf[user_cursor - backlog_len];
+            pch.end = 0;
+        } else {
+            pch.end = 1;
+        }
+
+        markdown_parse(&pch);
+
+        if(pch.end && pch.move_count >= 0) {
+            break;
+        } else if(user_cursor < backlog_len) {
+            if(pch.parsed) {
+                backlog_start = (backlog_start + user_cursor + 1) % BUFFER_SIZE;
+                backlog_len -= user_cursor + 1;
+                user_cursor = -1;
+            }
+        } else if(user_cursor < backlog_len + in_buf_len) {
+            if(pch.parsed) {
+                user_cursor -= backlog_len;
+                backlog_len = 0;
+                in_buf_unparse_start = BUFFER_SIZE;
+            } else if(in_buf_unparse_start == BUFFER_SIZE) {
+                in_buf_unparse_start = user_cursor - backlog_len;
+            }
+        }
+
+        user_cursor += pch.move_count;
+    }
+}
