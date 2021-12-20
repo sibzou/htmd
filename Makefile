@@ -1,7 +1,7 @@
 OPTIONS=-Wall
 
-htmd: htmd.o markdown.o outstream.o misc.o
-	gcc htmd.o markdown.o outstream.o misc.o -o htmd ${OPTIONS}
+htmd: htmd.o markdown.o outstream.o paragraph.o misc.o
+	gcc htmd.o markdown.o outstream.o paragraph.o misc.o -o htmd ${OPTIONS}
 
 htmd.o: htmd.c
 	gcc -c htmd.c ${OPTIONS}
@@ -11,6 +11,9 @@ markdown.o: markdown.c
 
 outstream.o: outstream.c
 	gcc -c outstream.c ${OPTIONS}
+
+paragraph.o: paragraph.c
+	gcc -c paragraph.c ${OPTIONS}
 
 misc.o: misc.c
 	gcc -c misc.c ${OPTIONS}
