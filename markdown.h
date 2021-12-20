@@ -1,5 +1,3 @@
-#include "outstream.h"
-
 struct markdown_parser {
 	struct out_stream out_stream;
 };

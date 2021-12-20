@@ -1,5 +1,3 @@
-#include "misc.h"
-
 struct out_stream {
 	char buf[BUFFER_SIZE];
 	int buf_len;
