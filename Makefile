@@ -3,16 +3,16 @@ OPTIONS=-Wall
 htmd: htmd.o markdown.o outstream.o misc.o
 	gcc htmd.o markdown.o outstream.o misc.o -o htmd ${OPTIONS}
 
-htmd.o: htmd.c htmd.h markdown.h misc.h
+htmd.o: htmd.c
 	gcc -c htmd.c ${OPTIONS}
 
-markdown.o: markdown.c htmd.h markdown.h
+markdown.o: markdown.c
 	gcc -c markdown.c ${OPTIONS}
 
-outstream.o: outstream.c outstream.h
+outstream.o: outstream.c
 	gcc -c outstream.c ${OPTIONS}
 
-misc.o:
+misc.o: misc.c
 	gcc -c misc.c ${OPTIONS}
 
 clean:
