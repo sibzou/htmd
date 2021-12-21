@@ -1,7 +1,7 @@
 struct out_stream {
-	char buf[BUFFER_SIZE];
-	int buf_len;
-	char *proc_name;
+    char buf[BUFFER_SIZE];
+    int buf_len;
+    char *proc_name;
 };
 
 void out_stream_init(struct out_stream *s, char *proc_name);

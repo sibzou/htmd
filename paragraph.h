@@ -1,6 +1,6 @@
 struct paragraph_parser {
-	struct out_stream *out_stream;
-	int out_of_word;
+    struct out_stream *out_stream;
+    int out_of_word;
 };
 
 void paragraph_parser_init(struct paragraph_parser *s, struct out_stream *out_stream);

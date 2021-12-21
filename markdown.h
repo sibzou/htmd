@@ -1,6 +1,6 @@
 struct markdown_parser {
-	struct paragraph_parser paragraph_parser;
-	struct out_stream out_stream;
+    struct paragraph_parser paragraph_parser;
+    struct out_stream out_stream;
 };
 
 void markdown_parser_init(struct markdown_parser *s, char *proc_name);
