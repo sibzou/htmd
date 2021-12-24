@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #include "htmd.h"
 #include "misc.h"
 #include "outstream.h"

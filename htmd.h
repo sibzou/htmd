@@ -1,7 +1,7 @@
 struct parser_char {
     char c;
-    int end;
+    bool end;
 
-    int parsed;
+    bool parsed;
     int move_count;
 };

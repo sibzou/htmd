@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <stdbool.h>
 #include <err.h>
 #include <stdlib.h>
 
@@ -25,7 +26,7 @@ int main(int argc, char *argv[]) {
     struct markdown_parser mdp;
     markdown_parser_init(&mdp, argv[0]);
 
-    while(1) {
+    while(true) {
         struct parser_char pch;
 
         // if we are out of saved data, we continue to read the input stream
@@ -58,12 +59,12 @@ int main(int argc, char *argv[]) {
         // get the real character from user_cursor
         if(user_cursor < backlog_len) {
             pch.c = backlog[(backlog_start + user_cursor) % BUFFER_SIZE];
-            pch.end = 0;
+            pch.end = false;
         } else if(user_cursor < backlog_len + in_buf_len) {
             pch.c = in_buf[user_cursor - backlog_len];
-            pch.end = 0;
+            pch.end = false;
         } else {
-            pch.end = 1;
+            pch.end = true;
         }
 
         markdown_parse(&mdp, &pch);
