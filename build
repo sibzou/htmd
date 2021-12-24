@@ -1,0 +1,8 @@
+OPTIONS="-Wall"
+
+gcc -c htmd.c $OPTIONS
+gcc -c markdown.c $OPTIONS
+gcc -c paragraph.c $OPTIONS
+gcc -c outstream.c $OPTIONS
+
+gcc htmd.o markdown.o paragraph.o outstream.o -o htmd $OPTIONS
