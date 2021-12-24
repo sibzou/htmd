@@ -10,12 +10,13 @@ void paragraph_parser_init(struct paragraph_parser *s, struct out_stream *out_st
     s->step = PPS_OUT_PARAG;
 }
 
-static void paragraph_parse_char(struct paragraph_parser *s, char c) {
+static bool paragraph_parse_char(struct paragraph_parser *s, char c) {
     if(c == ' ' || c == '\t') {
         if(s->step == PPS_IN_WORD) s->step = PPS_OUT_WORD;
     } else if(c == '\n') {
         if(s->step == PPS_IN_WORD || s->step == PPS_OUT_WORD) {
             s->step = PPS_OUT_LINE;
+            return true;
         } else if(s->step == PPS_OUT_LINE) {
             paragraph_parser_end(s);
         }
@@ -29,19 +30,23 @@ static void paragraph_parse_char(struct paragraph_parser *s, char c) {
         out_stream_write_char(s->out_stream, c);
         s->step = PPS_IN_WORD;
     }
+
+    return false;
 }
 
-void paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
+bool paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
+    pch->parsed = true;
+    pch->move_count = 1;
+
     if(pch->end) {
         if(s->step != PPS_OUT_PARAG) {
             paragraph_parser_end(s);
         }
     } else {
-        paragraph_parse_char(s, pch->c);
+        return paragraph_parse_char(s, pch->c);
     }
 
-    pch->parsed = true;
-    pch->move_count = 1;
+    return false;
 }
 
 void paragraph_parse_force(struct paragraph_parser *s, char c) {
