@@ -89,6 +89,4 @@ int main(int argc, char *argv[]) {
 
         user_cursor += pch.move_count;
     }
-
-    markdown_parser_close(&mdp);
 }

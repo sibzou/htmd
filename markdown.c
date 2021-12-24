@@ -15,13 +15,13 @@ void markdown_parser_init(struct markdown_parser *s) {
 
 void markdown_parse(struct markdown_parser *s, struct parser_char *pch) {
     paragraph_parse(&s->paragraph_parser, pch);
+
+    if(pch->end) {
+        out_stream_write_str(&s->out_stream, "    </body>\n</html>\n");
+        out_stream_flush(&s->out_stream);
+    }
 }
 
 void markdown_parse_force(char c) {
 
-}
-
-void markdown_parser_close(struct markdown_parser *s) {
-    out_stream_write_str(&s->out_stream, "    </body>\n</html>\n");
-    out_stream_flush(&s->out_stream);
 }

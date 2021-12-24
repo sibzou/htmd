@@ -6,4 +6,3 @@ struct markdown_parser {
 void markdown_parser_init(struct markdown_parser *s);
 void markdown_parse(struct markdown_parser *s, struct parser_char *pch);
 void markdown_parse_force(char c);
-void markdown_parser_close(struct markdown_parser *s);
