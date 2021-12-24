@@ -1,4 +1,6 @@
 #include <unistd.h>
+#include <err.h>
+#include <stdlib.h>
 
 #include "misc.h"
 #include "outstream.h"
@@ -27,7 +29,11 @@ void out_stream_flush(struct out_stream *s) {
 
     while(written < s->buf_len) {
         int ret = write(STDOUT_FILENO, s->buf + written, s->buf_len - written);
-        syscall_error(ret, s->proc_name, "write");
+
+        if(ret == -1) {
+            err(EXIT_FAILURE, "can't write the output");
+        }
+
         written += ret;
     }
 

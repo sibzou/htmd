@@ -1,4 +1,6 @@
 #include <unistd.h>
+#include <err.h>
+#include <stdlib.h>
 
 #include "htmd.h"
 #include "paragraph.h"
@@ -47,7 +49,10 @@ int main(int argc, char *argv[]) {
             }
 
             in_buf_len = read(in_fd, in_buf, BUFFER_SIZE);
-            syscall_error(in_buf_len, argv[0], "read");
+
+            if(in_buf_len == -1) {
+                err(EXIT_FAILURE, "can't read the input");
+            }
         }
 
         // get the real character from user_cursor
