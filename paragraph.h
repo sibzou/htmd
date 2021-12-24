@@ -1,6 +1,11 @@
 struct paragraph_parser {
     struct out_stream *out_stream;
-    int out_of_word;
+    enum {
+        PPS_IN_WORD,
+        PPS_OUT_WORD,
+        PPS_OUT_LINE,
+        PPS_OUT_PARAG
+    } step;
 };
 
 void paragraph_parser_init(struct paragraph_parser *s, struct out_stream *out_stream);
