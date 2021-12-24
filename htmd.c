@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
                     backlog_len++;
                 } else {
                     // we force parsing if there is no more space in the backlog
-                    markdown_parse_force(backlog[backlog_start]);
+                    markdown_parse_force(&mdp, backlog[backlog_start]);
                     backlog[backlog_start] = in_buf[i];
                     backlog_start = (backlog_start + 1) % BUFFER_SIZE;
 

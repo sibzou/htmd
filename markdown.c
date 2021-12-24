@@ -22,6 +22,6 @@ void markdown_parse(struct markdown_parser *s, struct parser_char *pch) {
     }
 }
 
-void markdown_parse_force(char c) {
-
+void markdown_parse_force(struct markdown_parser *s, char c) {
+    paragraph_parse_force(&s->paragraph_parser, c);
 }
