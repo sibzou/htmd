@@ -5,9 +5,8 @@
 #include "misc.h"
 #include "outstream.h"
 
-void out_stream_init(struct out_stream *s, char *proc_name) {
+void out_stream_init(struct out_stream *s) {
     s->buf_len = 0;
-    s->proc_name = proc_name;
 }
 
 void out_stream_write_char(struct out_stream *s, char c) {

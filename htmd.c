@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     int user_cursor = 0;
 
     struct markdown_parser mdp;
-    markdown_parser_init(&mdp, argv[0]);
+    markdown_parser_init(&mdp);
 
     while(true) {
         struct parser_char pch;

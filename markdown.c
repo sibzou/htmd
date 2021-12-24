@@ -6,10 +6,10 @@
 #include "paragraph.h"
 #include "markdown.h"
 
-void markdown_parser_init(struct markdown_parser *s, char *proc_name) {
+void markdown_parser_init(struct markdown_parser *s) {
     paragraph_parser_init(&s->paragraph_parser, &s->out_stream);
 
-    out_stream_init(&s->out_stream, proc_name);
+    out_stream_init(&s->out_stream);
     out_stream_write_str(&s->out_stream, "<!DOCTYPE html>\n<html>\n    <head>\n        <link rel=\"stylesheet\" href=\"style.css\">\n    </head>\n    <body>\n");
 }
 
