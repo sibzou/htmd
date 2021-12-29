@@ -11,6 +11,7 @@
 
 static void input_buffer_init(struct input_buffer *s) {
     s->read_buf_len = 0;
+    s->read_buf_unparse_start = BUFFER_SIZE;
     s->backlog_start = 0;
     s->backlog_len = 0;
     s->user_cursor = 0;
