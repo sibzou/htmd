@@ -17,7 +17,31 @@ static void input_buffer_init(struct input_buffer *s) {
     s->user_cursor = 0;
 }
 
-static void read_fd_if_needed(struct input_buffer *s, int read_fd, struct markdown_parser *mdp) {
+static void copy_unparsed_data_to_backlog(struct input_buffer *s,
+        struct markdown_parser *mdp) {
+
+    for(int i = s->read_buf_unparse_start; i < s->read_buf_len; i++) {
+        if(s->backlog_len < BUFFER_SIZE) {
+            int offset = (s->backlog_start + s->backlog_len) % BUFFER_SIZE;
+            s->backlog[offset] = s->read_buf[i];
+            s->backlog_len++;
+        } else {
+            // we force parsing if there is no more space in the backlog
+            markdown_parse_force(mdp, s->backlog[s->backlog_start]);
+            s->backlog[s->backlog_start] = s->read_buf[i];
+            s->backlog_start = (s->backlog_start + 1) % BUFFER_SIZE;
+
+            /* after forced parsing, we start parse again from the first saved
+             * data
+             */
+            s->user_cursor = 0;
+        }
+    }
+}
+
+static void read_fd_if_needed(struct input_buffer *s, int read_fd,
+        struct markdown_parser *mdp) {
+
     // if we are out of saved data, we continue to read the input stream
     if(s->user_cursor >= s->backlog_len + s->read_buf_len) {
         if(s->read_buf_unparse_start == BUFFER_SIZE) {
@@ -26,22 +50,7 @@ static void read_fd_if_needed(struct input_buffer *s, int read_fd, struct markdo
             s->user_cursor -= s->read_buf_unparse_start;
         }
 
-        // copying unparsed data from the read buffer to the backlog
-        for(int i = s->read_buf_unparse_start; i < s->read_buf_len; i++) {
-            if(s->backlog_len < BUFFER_SIZE) {
-                s->backlog[(s->backlog_start + s->backlog_len) % BUFFER_SIZE] = s->read_buf[i];
-                s->backlog_len++;
-            } else {
-                // we force parsing if there is no more space in the backlog
-                markdown_parse_force(mdp, s->backlog[s->backlog_start]);
-                s->backlog[s->backlog_start] = s->read_buf[i];
-                s->backlog_start = (s->backlog_start + 1) % BUFFER_SIZE;
-
-                // after forced parsing, we start parse again from the first saved data
-                s->user_cursor = 0;
-            }
-        }
-
+        copy_unparsed_data_to_backlog(s, mdp);
         s->read_buf_len = read(read_fd, s->read_buf, BUFFER_SIZE);
 
         if(s->read_buf_len == -1) {
@@ -53,7 +62,9 @@ static void read_fd_if_needed(struct input_buffer *s, int read_fd, struct markdo
 }
 
 // get the real character from user_cursor
-static void get_user_cursor_char(struct input_buffer *s, struct parser_char *pch) {
+static void get_user_cursor_char(struct input_buffer *s,
+        struct parser_char *pch) {
+
     if(s->user_cursor < s->backlog_len) {
         pch->c = s->backlog[(s->backlog_start + s->user_cursor) % BUFFER_SIZE];
         pch->end = false;
