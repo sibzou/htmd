@@ -1,7 +1,7 @@
 #include <stdbool.h>
 
-#include "htmd.h"
 #include "misc.h"
+#include "htmd.h"
 #include "outstream.h"
 #include "paragraph.h"
 #include "markdown.h"
