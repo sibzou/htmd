@@ -11,7 +11,6 @@
 
 static void input_buffer_init(struct input_buffer *s) {
     s->read_buf_len = 0;
-    s->read_buf_unparse_start = BUFFER_SIZE;
     s->backlog_start = 0;
     s->backlog_len = 0;
     s->user_cursor = 0;
@@ -47,6 +46,8 @@ static void read_fd_if_needed(struct input_buffer *s, int read_fd, struct markdo
         if(s->read_buf_len == -1) {
             err(EXIT_FAILURE, "can't read the input");
         }
+
+        s->read_buf_unparse_start = BUFFER_SIZE;
     }
 }
 
