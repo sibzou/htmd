@@ -3,6 +3,7 @@
 #include "misc.h"
 #include "htmd.h"
 #include "outstream.h"
+#include "textflow.h"
 #include "paragraph.h"
 #include "markdown.h"
 
