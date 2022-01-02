@@ -35,7 +35,3 @@ bool text_flow_parse_char(struct text_flow_parser *s, char c) {
 
     return false;
 }
-
-void text_flow_parser_first_char_hook_end(struct text_flow_parser *s, char c) {
-    out_stream_write_char(s->out_stream, c);
-}

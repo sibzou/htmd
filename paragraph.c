@@ -24,7 +24,7 @@ static void paragraph_parse_char(struct paragraph_parser *s, char c) {
     if(text_flow_parse_char(&s->text_flow_parser, c)) {
         out_stream_write_str(s->out_stream, "        <p>");
         s->out_line = false;
-        text_flow_parser_first_char_hook_end(&s->text_flow_parser, c);
+        text_flow_parse_char(&s->text_flow_parser, c);
     }
 
     if(s->text_flow_parser.step == TFPS_WORD_OUT
