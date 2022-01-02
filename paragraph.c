@@ -18,43 +18,34 @@ static void paragraph_parser_end(struct paragraph_parser *s) {
     text_flow_parser_reset(&s->text_flow_parser);
 }
 
-static void paragraph_parse_char(struct paragraph_parser *s, char c) {
-    int prev_text_flow_parser_step = s->text_flow_parser.step;
-
-    if(text_flow_parse_char(&s->text_flow_parser, c)) {
-        out_stream_write_str(s->out_stream, "        <p>");
-        s->out_line = false;
-        text_flow_parse_char(&s->text_flow_parser, c);
-    }
-
-    if(s->text_flow_parser.step == TFPS_WORD_OUT
-            && prev_text_flow_parser_step != TFPS_WORD_OUT) {
-
-        s->out_line = false;
-    }
-
-    if(c == '\n' && s->text_flow_parser.step == TFPS_WORD_OUT) {
-        if(s->out_line) {
-            paragraph_parser_end(s);
-        } else {
-            s->out_line = true;
-        }
-    }
-}
-
 void paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
-    pch->parsed = true;
-    pch->move_count = 1;
-
     if(pch->end) {
         if(s->text_flow_parser.step != TFPS_WAIT) {
             paragraph_parser_end(s);
         }
-    } else {
-        paragraph_parse_char(s, pch->c);
-    }
-}
 
-void paragraph_parse_force(struct paragraph_parser *s, char c) {
-    paragraph_parse_char(s, c);
+        pch->parsed = true;
+        pch->move_count = 1;
+    } else {
+        int prev_text_flow_parser_step = s->text_flow_parser.step;
+        text_flow_parse(&s->text_flow_parser, pch);
+
+        if(prev_text_flow_parser_step == TFPS_WAIT
+                && s->text_flow_parser.step != TFPS_WAIT) {
+
+            out_stream_write_str(s->out_stream, "        <p>");
+        } else if(prev_text_flow_parser_step != TFPS_WORD_OUT
+                && s->text_flow_parser.step == TFPS_WORD_OUT) {
+
+            s->out_line = false;
+        }
+
+        if(pch->c == '\n' && s->text_flow_parser.step == TFPS_WORD_OUT) {
+            if(s->out_line) {
+                paragraph_parser_end(s);
+            } else {
+                s->out_line = true;
+            }
+        }
+    }
 }

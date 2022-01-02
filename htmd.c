@@ -27,8 +27,14 @@ static void copy_unparsed_data_to_backlog(struct input_buffer *s,
             s->backlog[offset] = s->read_buf[i];
             s->backlog_len++;
         } else {
+            struct parser_char pch;
+            pch.c = s->backlog[s->backlog_start];
+
             // we force parsing if there is no more space in the backlog
-            markdown_parse_force(mdp, s->backlog[s->backlog_start]);
+            do {
+                markdown_parse_force(mdp, &pch);
+            } while(pch.move_count == 0);
+
             s->backlog[s->backlog_start] = s->read_buf[i];
             s->backlog_start = (s->backlog_start + 1) % BUFFER_SIZE;
 

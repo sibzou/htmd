@@ -11,4 +11,4 @@ void text_flow_parser_init(struct text_flow_parser *s,
     struct out_stream *out_stream);
 
 void text_flow_parser_reset(struct text_flow_parser *s);
-bool text_flow_parse_char(struct text_flow_parser *s, char c);
+void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch);
