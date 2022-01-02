@@ -78,7 +78,7 @@ static void get_user_cursor_char(struct input_buffer *s,
 }
 
 static bool handle_parse_result(struct input_buffer *s, struct parser_char *pch) {
-    if(pch->end && pch->move_count >= 0) {
+    if(pch->end && pch->move_count > 0) {
         return true;
     } else if(s->user_cursor < s->backlog_len) {
         if(pch->parsed) {
