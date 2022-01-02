@@ -13,6 +13,11 @@ void paragraph_parser_init(struct paragraph_parser *s,
     s->out_stream = out_stream;
 }
 
+static void paragraph_parser_end(struct paragraph_parser *s) {
+    out_stream_write_str(s->out_stream, "</p>\n");
+    text_flow_parser_reset(&s->text_flow_parser);
+}
+
 static void paragraph_parse_char(struct paragraph_parser *s, char c) {
     int prev_text_flow_parser_step = s->text_flow_parser.step;
 
@@ -52,9 +57,4 @@ void paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
 
 void paragraph_parse_force(struct paragraph_parser *s, char c) {
     paragraph_parse_char(s, c);
-}
-
-void paragraph_parser_end(struct paragraph_parser *s) {
-    out_stream_write_str(s->out_stream, "</p>\n");
-    text_flow_parser_reset(&s->text_flow_parser);
 }
