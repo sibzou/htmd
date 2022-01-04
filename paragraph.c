@@ -19,7 +19,7 @@ static void paragraph_parser_end(struct paragraph_parser *s) {
 }
 
 void paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
-    if(pch->end) {
+    if(pch->type == PCT_END) {
         if(s->text_flow_parser.step != TFPS_WAIT) {
             paragraph_parser_end(s);
         }

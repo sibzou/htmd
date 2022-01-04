@@ -1,6 +1,10 @@
 struct parser_char {
     char c;
-    bool end;
+    enum {
+        PCT_NORMAL,
+        PCT_END,
+        PCT_FORCED
+    } type;
 
     bool parsed;
     int move_count;

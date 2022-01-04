@@ -74,17 +74,17 @@ static void get_user_cursor_char(struct input_buffer *s,
 
     if(s->user_cursor < s->backlog_len) {
         pch->c = s->backlog[(s->backlog_start + s->user_cursor) % BUFFER_SIZE];
-        pch->end = false;
+        pch->type = PCT_NORMAL;
     } else if(s->user_cursor < s->backlog_len + s->read_buf_len) {
         pch->c = s->read_buf[s->user_cursor - s->backlog_len];
-        pch->end = false;
+        pch->type = PCT_NORMAL;
     } else {
-        pch->end = true;
+        pch->type = PCT_END;
     }
 }
 
 static bool handle_parse_result(struct input_buffer *s, struct parser_char *pch) {
-    if(pch->end && pch->move_count > 0) {
+    if(pch->type == PCT_END && pch->move_count > 0) {
         return true;
     } else if(s->user_cursor < s->backlog_len) {
         if(pch->parsed) {
