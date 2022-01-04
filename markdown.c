@@ -22,7 +22,3 @@ void markdown_parse(struct markdown_parser *s, struct parser_char *pch) {
         out_stream_flush(&s->out_stream);
     }
 }
-
-void markdown_parse_force(struct markdown_parser *s, struct parser_char *pch) {
-    paragraph_parse(&s->paragraph_parser, pch);
-}
