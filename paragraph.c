@@ -19,33 +19,32 @@ static void paragraph_parser_end(struct paragraph_parser *s) {
 }
 
 void paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
+    int prev_text_flow_parser_step = s->text_flow_parser.step;
+    text_flow_parse(&s->text_flow_parser, pch);
+
     if(pch->type == PCT_END) {
-        if(s->text_flow_parser.step != TFPS_WAIT) {
+        if(s->text_flow_parser.step != TFPS_WAIT && pch->move_count > 0) {
             paragraph_parser_end(s);
         }
 
-        pch->parsed = true;
-        pch->move_count = 1;
-    } else {
-        int prev_text_flow_parser_step = s->text_flow_parser.step;
-        text_flow_parse(&s->text_flow_parser, pch);
+        return;
+    }
 
-        if(prev_text_flow_parser_step == TFPS_WAIT
-                && s->text_flow_parser.step != TFPS_WAIT) {
+    if(prev_text_flow_parser_step == TFPS_WAIT
+            && s->text_flow_parser.step != TFPS_WAIT) {
 
-            out_stream_write_str(s->out_stream, "        <p>");
-        } else if(prev_text_flow_parser_step != TFPS_WORD_OUT
-                && s->text_flow_parser.step == TFPS_WORD_OUT) {
+        out_stream_write_str(s->out_stream, "        <p>");
+    } else if(prev_text_flow_parser_step != TFPS_WORD_OUT
+            && s->text_flow_parser.step == TFPS_WORD_OUT) {
 
-            s->out_line = false;
-        }
+        s->out_line = false;
+    }
 
-        if(pch->c == '\n' && s->text_flow_parser.step == TFPS_WORD_OUT) {
-            if(s->out_line) {
-                paragraph_parser_end(s);
-            } else {
-                s->out_line = true;
-            }
+    if(pch->c == '\n' && s->text_flow_parser.step == TFPS_WORD_OUT) {
+        if(s->out_line) {
+            paragraph_parser_end(s);
+        } else {
+            s->out_line = true;
         }
     }
 }

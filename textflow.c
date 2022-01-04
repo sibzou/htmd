@@ -17,6 +17,13 @@ void text_flow_parser_reset(struct text_flow_parser *s) {
 }
 
 void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
+    pch->parsed = true;
+    pch->move_count = 1;
+
+    if(pch->type == PCT_END) {
+        return;
+    }
+
     if(pch->c == ' ' || pch->c == '\t' || pch->c == '\n') {
         if(s->step == TFPS_WORD_IN) {
             s->step = TFPS_WORD_OUT;
@@ -34,7 +41,4 @@ void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
 
         out_stream_write_char(s->out_stream, pch->c);
     }
-
-    pch->parsed = true;
-    pch->move_count = 1;
 }
