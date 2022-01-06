@@ -41,8 +41,11 @@ void link_parse(struct text_flow_parser *s, struct parser_char *pch) {
     pch->parsed = false;
     pch->move_count = 1;
 
-    if(pch->type == PCT_END || pch->c == '\n') {
+    if(pch->type == PCT_FORCED || pch->type == PCT_END
+            || pch->c == '\n') {
+
         link_cancel_parse(s, pch);
+        pch->move_count = 0;
         return;
     } else if(s->step == LKPS_TEXT) {
         if(pch->c != ' ' && pch->c != '\t') {
@@ -92,9 +95,7 @@ void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
             out_stream_write_char(s->out_stream, ' ');
         }
 
-        if(link_parse_start(s, pch)) {
-            return;
-        } else if(is_a_word_char(pch->c)) {
+        if(!link_parse_start(s, pch) && is_a_word_char(pch->c)) {
             s->step = TFPS_IN_WORD;
             pch->parsed = false;
             pch->move_count = 0;
