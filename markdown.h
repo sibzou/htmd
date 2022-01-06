@@ -1,5 +1,6 @@
 struct markdown_parser {
     struct paragraph_parser paragraph_parser;
+    bool in_parag;
     struct out_stream out_stream;
 };
 

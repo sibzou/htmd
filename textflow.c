@@ -9,11 +9,26 @@ void text_flow_parser_init(struct text_flow_parser *s,
         struct out_stream *out_stream) {
 
     s->out_stream = out_stream;
-    text_flow_parser_reset(s);
 }
 
-void text_flow_parser_reset(struct text_flow_parser *s) {
-    s->step = TFPS_WAIT;
+static bool is_not_a_word_char(char c) {
+    return c == ' ' || c == '\t' || c == '\n';
+}
+
+bool text_flow_parse_start(struct text_flow_parser *s,
+        struct parser_char *pch) {
+
+    s->in_word = !is_not_a_word_char(pch->c);
+
+    if(s->in_word) {
+        pch->parsed = false;
+        pch->move_count = 0;
+    } else {
+        pch->parsed = true;
+        pch->move_count = 1;
+    }
+
+    return s->in_word;
 }
 
 void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
@@ -22,20 +37,13 @@ void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
 
     if(pch->type == PCT_END) {
         return;
-    }
-
-    if(pch->c == ' ' || pch->c == '\t' || pch->c == '\n') {
-        if(s->step == TFPS_WORD_IN) {
-            s->step = TFPS_WORD_OUT;
+    } else if(is_not_a_word_char(pch->c)) {
+        if(s->in_word) {
+            s->in_word = false;
         }
     } else {
-        if(s->step == TFPS_WAIT) {
-            s->step = TFPS_WORD_IN;
-            pch->parsed = false;
-            pch->move_count = 0;
-            return;
-        } else if(s->step == TFPS_WORD_OUT) {
-            s->step = TFPS_WORD_IN;
+        if(!s->in_word) {
+            s->in_word = true;
             out_stream_write_char(s->out_stream, ' ');
         }
 

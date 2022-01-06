@@ -15,36 +15,41 @@ void paragraph_parser_init(struct paragraph_parser *s,
 
 static void paragraph_parser_end(struct paragraph_parser *s) {
     out_stream_write_str(s->out_stream, "</p>\n");
-    text_flow_parser_reset(&s->text_flow_parser);
 }
 
-void paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
-    int prev_text_flow_parser_step = s->text_flow_parser.step;
+bool paragraph_parse_start(struct paragraph_parser *s,
+        struct parser_char *pch) {
+
+    bool res = text_flow_parse_start(&s->text_flow_parser, pch);
+
+    if(res) {
+        out_stream_write_str(s->out_stream, "        <p>");
+    }
+
+    return res;
+}
+
+bool paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
+    int prev_in_word = s->text_flow_parser.in_word;
     text_flow_parse(&s->text_flow_parser, pch);
 
     if(pch->type == PCT_END) {
-        if(s->text_flow_parser.step != TFPS_WAIT && pch->move_count > 0) {
-            paragraph_parser_end(s);
+        paragraph_parser_end(s);
+        return false;
+    } else if(!s->text_flow_parser.in_word) {
+        if(prev_in_word) {
+            s->out_line = false;
         }
 
-        return;
-    }
-
-    if(prev_text_flow_parser_step == TFPS_WAIT
-            && s->text_flow_parser.step != TFPS_WAIT) {
-
-        out_stream_write_str(s->out_stream, "        <p>");
-    } else if(prev_text_flow_parser_step != TFPS_WORD_OUT
-            && s->text_flow_parser.step == TFPS_WORD_OUT) {
-
-        s->out_line = false;
-    }
-
-    if(pch->c == '\n' && s->text_flow_parser.step == TFPS_WORD_OUT) {
-        if(s->out_line) {
-            paragraph_parser_end(s);
-        } else {
-            s->out_line = true;
+        if(pch->c == '\n') {
+            if(s->out_line) {
+                paragraph_parser_end(s);
+                return false;
+            } else {
+                s->out_line = true;
+            }
         }
     }
+
+    return true;
 }
