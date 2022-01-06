@@ -4,7 +4,10 @@ struct text_flow_parser {
         TFPS_OUT_WORD,
         LKPS_TEXT,
         LKPS_CLOSE_BRACKET,
-        LKPS_OPEN_PARENTHESIS
+        LKPS_OPEN_PARENTHESIS,
+        LKPS_URL,
+        LKPS_URL_END,
+        LKPS_CLOSE_PARENTHESIS
     } step;
 
     int link_start_distance;

@@ -37,6 +37,14 @@ static void link_cancel_parse(struct text_flow_parser *s,
     pch->move_count = s->link_start_distance;
 }
 
+static void link_parse_success(struct text_flow_parser *s,
+        struct parser_char *pch) {
+
+    out_stream_write_str(s->out_stream, "<a></a>");
+    s->step = TFPS_OUT_WORD;
+    pch->parsed = true;
+}
+
 void link_parse(struct text_flow_parser *s, struct parser_char *pch) {
     pch->parsed = false;
     pch->move_count = 1;
@@ -60,10 +68,24 @@ void link_parse(struct text_flow_parser *s, struct parser_char *pch) {
         }
     } else if(s->step == LKPS_OPEN_PARENTHESIS) {
         if(pch->c == '(') {
-            out_stream_write_str(s->out_stream, "<a></a>");
-            s->step = TFPS_OUT_WORD;
-            pch->parsed = true;
+            s->step = LKPS_URL;
         } else {
+            link_cancel_parse(s, pch);
+        }
+    } else if(s->step == LKPS_URL) {
+        if(pch->c != ' ' && pch->c != '\t') {
+            s->step = LKPS_URL_END;
+        }
+    } else if(s->step == LKPS_URL_END) {
+        if(pch->c == ')') {
+            link_parse_success(s, pch);
+        } else if(pch->c == ' ') {
+            s->step = LKPS_CLOSE_PARENTHESIS;
+        }
+    } else if(s->step == LKPS_CLOSE_PARENTHESIS) {
+        if(pch->c == ')') {
+            link_parse_success(s, pch);
+        } else if(pch->c != ' ' && pch->c != '\t') {
             link_cancel_parse(s, pch);
         }
     }
