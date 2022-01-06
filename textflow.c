@@ -23,9 +23,6 @@ bool text_flow_parse_start(struct text_flow_parser *s,
     if(s->in_word) {
         pch->parsed = false;
         pch->move_count = 0;
-    } else {
-        pch->parsed = true;
-        pch->move_count = 1;
     }
 
     return s->in_word;
@@ -35,9 +32,7 @@ void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
     pch->parsed = true;
     pch->move_count = 1;
 
-    if(pch->type == PCT_END) {
-        return;
-    } else if(is_not_a_word_char(pch->c)) {
+    if(is_not_a_word_char(pch->c)) {
         if(s->in_word) {
             s->in_word = false;
         }

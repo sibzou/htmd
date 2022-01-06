@@ -30,23 +30,27 @@ bool paragraph_parse_start(struct paragraph_parser *s,
 }
 
 bool paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
-    int prev_in_word = s->text_flow_parser.in_word;
-    text_flow_parse(&s->text_flow_parser, pch);
-
     if(pch->type == PCT_END) {
         paragraph_parser_end(s);
+        pch->parsed = true;
+        pch->move_count = 1;
         return false;
-    } else if(!s->text_flow_parser.in_word) {
-        if(prev_in_word) {
-            s->out_line = false;
-        }
+    } else {
+        int prev_in_word = s->text_flow_parser.in_word;
+        text_flow_parse(&s->text_flow_parser, pch);
 
-        if(pch->c == '\n') {
-            if(s->out_line) {
-                paragraph_parser_end(s);
-                return false;
-            } else {
-                s->out_line = true;
+        if(!s->text_flow_parser.in_word) {
+            if(prev_in_word) {
+                s->out_line = false;
+            }
+
+            if(pch->c == '\n') {
+                if(s->out_line) {
+                    paragraph_parser_end(s);
+                    return false;
+                } else {
+                    s->out_line = true;
+                }
             }
         }
     }
