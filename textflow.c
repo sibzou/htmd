@@ -45,7 +45,10 @@ void link_parse(struct text_flow_parser *s, struct parser_char *pch) {
             || pch->c == '\n') {
 
         link_cancel_parse(s, pch);
-        pch->move_count = 0;
+
+        if(pch->type == PCT_FORCED) {
+            pch->move_count = 0;
+        }
         return;
     } else if(s->step == LKPS_TEXT) {
         if(pch->c != ' ' && pch->c != '\t') {
