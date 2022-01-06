@@ -16,18 +16,13 @@ void markdown_parser_init(struct markdown_parser *s) {
 }
 
 void markdown_parse(struct markdown_parser *s, struct parser_char *pch) {
+    pch->parsed = true;
+    pch->move_count = 1;
+
     if(s->in_parag) {
         s->in_parag = paragraph_parse(&s->paragraph_parser, pch);
-    } else if(pch->type == PCT_END) {
-        pch->parsed = true;
-        pch->move_count = 1;
-    } else {
+    } else if(pch->type != PCT_END) {
         s->in_parag = paragraph_parse_start(&s->paragraph_parser, pch);
-
-        if(!s->in_parag) {
-            pch->parsed = true;
-            pch->move_count = 1;
-        }
     }
 
     if(pch->type == PCT_END) {

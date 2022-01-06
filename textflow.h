@@ -1,5 +1,13 @@
 struct text_flow_parser {
-    bool in_word;
+    enum {
+        TFPS_IN_WORD,
+        TFPS_OUT_WORD,
+        LKPS_TEXT,
+        LKPS_CLOSE_BRACKET,
+        LKPS_OPEN_PARENTHESIS
+    } step;
+
+    int link_start_distance;
     struct out_stream *out_stream;
 };
 
