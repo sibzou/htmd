@@ -58,3 +58,7 @@ bool paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
 
     return true;
 }
+
+void paragraph_parser_prepare_for_forced_chars(struct paragraph_parser *s) {
+    text_flow_parser_prepare_for_forced_chars(&s->text_flow_parser);
+}

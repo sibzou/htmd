@@ -49,15 +49,8 @@ void link_parse(struct text_flow_parser *s, struct parser_char *pch) {
     pch->parsed = false;
     pch->move_count = 1;
 
-    if(pch->type == PCT_FORCED || pch->type == PCT_END
-            || pch->c == '\n') {
-
+    if(pch->type == PCT_END || pch->c == '\n') {
         link_cancel_parse(s, pch);
-
-        if(pch->type == PCT_FORCED) {
-            pch->move_count = 0;
-        }
-        return;
     } else if(s->step == LKPS_TEXT) {
         if(pch->c != ' ' && pch->c != '\t') {
             s->step = LKPS_CLOSE_BRACKET;
@@ -133,5 +126,11 @@ void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
         }
     } else {
         link_parse(s, pch);
+    }
+}
+
+void text_flow_parser_prepare_for_forced_chars(struct text_flow_parser *s) {
+    if(s->step != TFPS_IN_WORD && s->step != TFPS_OUT_WORD) {
+        s->step = TFPS_IN_WORD;
     }
 }

@@ -21,6 +21,14 @@ static void input_buffer_init(struct input_buffer *s) {
 static void copy_unparsed_data_to_backlog(struct input_buffer *s,
         struct markdown_parser *mdp) {
 
+    // if there are more bytes to copy than space in the backlog
+    if(s->read_buf_len - s->read_buf_unparse_start
+            > BUFFER_SIZE - s->backlog_len) {
+
+        // we say to markdown "hey, you'll have to force parse some bytes"
+        markdown_parser_prepare_for_forced_chars(mdp);
+    }
+
     for(int i = s->read_buf_unparse_start; i < s->read_buf_len; i++) {
         if(s->backlog_len < BUFFER_SIZE) {
             int offset = (s->backlog_start + s->backlog_len) % BUFFER_SIZE;
@@ -32,9 +40,7 @@ static void copy_unparsed_data_to_backlog(struct input_buffer *s,
             pch.type = PCT_FORCED;
 
             // we force parsing if there is no more space in the backlog
-            do {
-                markdown_parse(mdp, &pch);
-            } while(pch.move_count == 0);
+            markdown_parse(mdp, &pch);
 
             s->backlog[s->backlog_start] = s->read_buf[i];
             s->backlog_start = (s->backlog_start + 1) % BUFFER_SIZE;
