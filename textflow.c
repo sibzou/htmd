@@ -37,12 +37,14 @@ static void link_cancel_parse(struct text_flow_parser *s,
     pch->move_count = s->link_start_distance;
 }
 
-static void link_parse_success(struct text_flow_parser *s,
+static void prepare_for_link_url_write(struct text_flow_parser *s,
         struct parser_char *pch) {
 
-    out_stream_write_str(s->out_stream, "<a></a>");
-    s->step = TFPS_OUT_WORD;
-    pch->parsed = true;
+    out_stream_write_str(s->out_stream, "<a href=\"");
+    s->step = LKPS_WRITE_URL;
+    s->link_end = -s->link_start_distance + 1;
+    pch->move_count = s->link_start_distance + s->link_url_start;
+    s->link_start_distance -= pch->move_count - 1;
 }
 
 void link_parse(struct text_flow_parser *s, struct parser_char *pch) {
@@ -68,18 +70,30 @@ void link_parse(struct text_flow_parser *s, struct parser_char *pch) {
     } else if(s->step == LKPS_URL) {
         if(pch->c != ' ' && pch->c != '\t') {
             s->step = LKPS_URL_END;
+            s->link_url_start = -s->link_start_distance;
         }
     } else if(s->step == LKPS_URL_END) {
         if(pch->c == ')') {
-            link_parse_success(s, pch);
+            s->link_url_end = -s->link_start_distance;
+            prepare_for_link_url_write(s, pch);
         } else if(pch->c == ' ') {
             s->step = LKPS_CLOSE_PARENTHESIS;
+            s->link_url_end = -s->link_start_distance;
         }
     } else if(s->step == LKPS_CLOSE_PARENTHESIS) {
         if(pch->c == ')') {
-            link_parse_success(s, pch);
+            prepare_for_link_url_write(s, pch);
         } else if(pch->c != ' ' && pch->c != '\t') {
             link_cancel_parse(s, pch);
+        }
+    } else if(s->step == LKPS_WRITE_URL) {
+        if(s->link_start_distance == -s->link_url_end) {
+            out_stream_write_str(s->out_stream, "\"></a>");
+            s->step = TFPS_OUT_WORD;
+            pch->parsed = true;
+            pch->move_count = s->link_end - s->link_url_end;
+        } else {
+            out_stream_write_char(s->out_stream, pch->c);
         }
     }
 
