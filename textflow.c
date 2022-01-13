@@ -19,8 +19,10 @@ static bool link_parse_start(struct text_flow_parser *s,
         struct parser_char *pch) {
 
     if(pch->type != PCT_FORCED && pch->c == '[') {
-        s->step = LKPS_TEXT;
-        s->link_start_distance = -1;
+        s->link_step = LKS_TEXT;
+        s->in_word = true;
+
+        s->link_start_distance = 0;
         pch->parsed = false;
         pch->move_count = 1;
         return true;
@@ -32,7 +34,7 @@ static bool link_parse_start(struct text_flow_parser *s,
 static void link_cancel_parse(struct text_flow_parser *s,
         struct parser_char *pch) {
 
-    s->step = TFPS_IN_WORD;
+    s->link_step = LKS_NONE;
     pch->parsed = false;
     pch->move_count = s->link_start_distance;
 }
@@ -41,10 +43,9 @@ static void prepare_for_link_url_write(struct text_flow_parser *s,
         struct parser_char *pch) {
 
     out_stream_write_str(s->out_stream, "<a href=\"");
-    s->step = LKPS_WRITE_URL;
+    s->link_step = LKS_WRITE_URL;
     s->link_end = -s->link_start_distance + 1;
     pch->move_count = s->link_start_distance + s->link_url_start;
-    s->link_start_distance -= pch->move_count - 1;
 }
 
 void link_parse(struct text_flow_parser *s, struct parser_char *pch) {
@@ -53,51 +54,57 @@ void link_parse(struct text_flow_parser *s, struct parser_char *pch) {
 
     if(pch->type == PCT_END || pch->c == '\n') {
         link_cancel_parse(s, pch);
-    } else if(s->step == LKPS_TEXT) {
+    } else if(s->link_step == LKS_TEXT) {
         if(pch->c != ' ' && pch->c != '\t') {
-            s->step = LKPS_CLOSE_BRACKET;
+            s->link_step = LKS_CLOSE_BRACKET;
+            s->link_text_start = -s->link_start_distance;
         }
-    } else if(s->step == LKPS_CLOSE_BRACKET) {
+    } else if(s->link_step == LKS_CLOSE_BRACKET) {
         if(pch->c == ']') {
-            s->step = LKPS_OPEN_PARENTHESIS;
+            s->link_step = LKS_OPEN_PARENTHESIS;
+            s->link_text_end = -s->link_start_distance;
         }
-    } else if(s->step == LKPS_OPEN_PARENTHESIS) {
+    } else if(s->link_step == LKS_OPEN_PARENTHESIS) {
         if(pch->c == '(') {
-            s->step = LKPS_URL;
+            s->link_step = LKS_URL;
         } else {
             link_cancel_parse(s, pch);
         }
-    } else if(s->step == LKPS_URL) {
+    } else if(s->link_step == LKS_URL) {
         if(pch->c != ' ' && pch->c != '\t') {
-            s->step = LKPS_URL_END;
+            s->link_step = LKS_URL_END;
             s->link_url_start = -s->link_start_distance;
         }
-    } else if(s->step == LKPS_URL_END) {
+    } else if(s->link_step == LKS_URL_END) {
         if(pch->c == ')') {
             s->link_url_end = -s->link_start_distance;
             prepare_for_link_url_write(s, pch);
         } else if(pch->c == ' ') {
-            s->step = LKPS_CLOSE_PARENTHESIS;
+            s->link_step = LKS_CLOSE_PARENTHESIS;
             s->link_url_end = -s->link_start_distance;
         }
-    } else if(s->step == LKPS_CLOSE_PARENTHESIS) {
+    } else if(s->link_step == LKS_CLOSE_PARENTHESIS) {
         if(pch->c == ')') {
             prepare_for_link_url_write(s, pch);
         } else if(pch->c != ' ' && pch->c != '\t') {
             link_cancel_parse(s, pch);
         }
-    } else if(s->step == LKPS_WRITE_URL) {
+    } else if(s->link_step == LKS_WRITE_URL) {
         if(s->link_start_distance == -s->link_url_end) {
-            out_stream_write_str(s->out_stream, "\"></a>");
-            s->step = TFPS_OUT_WORD;
-            pch->parsed = true;
-            pch->move_count = s->link_end - s->link_url_end;
+            out_stream_write_str(s->out_stream, "\">");
+            s->link_step = LKS_WRITE_TEXT;
+            pch->move_count = s->link_text_start - s->link_url_end;
         } else {
             out_stream_write_char(s->out_stream, pch->c);
         }
+    } else if(s->link_step == LKS_WRITE_TEXT) {
+        if(s->link_start_distance == -s->link_text_end) {
+            out_stream_write_str(s->out_stream, "</a>");
+            s->link_step = LKS_NONE;
+            pch->parsed = true;
+            pch->move_count = s->link_end - s->link_text_end;
+        }
     }
-
-    s->link_start_distance--;
 }
 
 bool text_flow_parse_start(struct text_flow_parser *s,
@@ -109,12 +116,13 @@ bool text_flow_parse_start(struct text_flow_parser *s,
         res = is_a_word_char(pch->c);
 
         if(res) {
-            s->step = TFPS_IN_WORD;
+            s->in_word = true;
             pch->parsed = false;
             pch->move_count = 0;
         }
     }
 
+    s->link_start_distance -= pch->move_count;
     return res;
 }
 
@@ -122,29 +130,38 @@ void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
     pch->parsed = true;
     pch->move_count = 1;
 
-    if(s->step == TFPS_OUT_WORD) {
-        if(is_a_word_char(pch->c)) {
-            out_stream_write_char(s->out_stream, ' ');
-        }
+    int unch_link_step = s->link_step; // unchanged link step
 
-        if(!link_parse_start(s, pch) && is_a_word_char(pch->c)) {
-            s->step = TFPS_IN_WORD;
-            pch->parsed = false;
-            pch->move_count = 0;
-        }
-    } else if(s->step == TFPS_IN_WORD) {
-        if(is_a_word_char(pch->c)) {
-            out_stream_write_char(s->out_stream, pch->c);
-        } else {
-            s->step = TFPS_OUT_WORD;
-        }
-    } else {
+    if(unch_link_step != LKS_NONE) {
         link_parse(s, pch);
     }
+
+    if(unch_link_step == LKS_NONE || (unch_link_step == LKS_WRITE_TEXT
+            && s->link_step != LKS_NONE)) {
+        if(s->in_word) {
+            if(is_a_word_char(pch->c)) {
+                out_stream_write_char(s->out_stream, pch->c);
+            } else {
+                s->in_word = false;
+            }
+        } else {
+            if(is_a_word_char(pch->c)) {
+                out_stream_write_char(s->out_stream, ' ');
+
+                if(unch_link_step == LKS_WRITE_TEXT
+                        || !link_parse_start(s, pch)) {
+
+                    s->in_word = true;
+                    pch->parsed = false;
+                    pch->move_count = 0;
+                }
+            }
+        }
+    }
+
+    s->link_start_distance -= pch->move_count;
 }
 
 void text_flow_parser_prepare_for_forced_chars(struct text_flow_parser *s) {
-    if(s->step != TFPS_IN_WORD && s->step != TFPS_OUT_WORD) {
-        s->step = TFPS_IN_WORD;
-    }
+    s->link_step = LKS_NONE;
 }

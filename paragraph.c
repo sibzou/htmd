@@ -37,11 +37,11 @@ bool paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
         paragraph_parser_end(s);
         return false;
     } else {
-        int prev_text_flow_parser_step = s->text_flow_parser.step;
+        int prev_in_word = s->text_flow_parser.in_word;
         text_flow_parse(&s->text_flow_parser, pch);
 
-        if(s->text_flow_parser.step == TFPS_OUT_WORD) {
-            if(prev_text_flow_parser_step != TFPS_OUT_WORD) {
+        if(!s->text_flow_parser.in_word) {
+            if(prev_in_word) {
                 s->out_line = false;
             }
 
