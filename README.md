@@ -10,7 +10,7 @@ $ ./htmd < document.md > document.html
 Or just try it faster:
 
 ```bash
-$ echo "my markdown here" | ./htmd
+$ echo "hello you can click [here](https://kernel.org)" | ./htmd
 ```
 
 and see the result in the console.
@@ -18,7 +18,7 @@ and see the result in the console.
 ## What is working?
 
 - [x] paragraphs
-- [ ] links - **work in progress**
+- [x] links
 - [ ] headings
 - [ ] code blocks
 - [ ] unordered lists
