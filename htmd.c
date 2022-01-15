@@ -99,7 +99,7 @@ static bool handle_parse_result(struct input_buffer *s, struct parser_char *pch)
             s->backlog_len -= s->user_cursor + 1;
             s->user_cursor = -1;
         }
-    } else if(s->user_cursor < s->backlog_len + s->read_buf_len) {
+    } else if(s->user_cursor <= s->backlog_len + s->read_buf_len) {
         if(pch->parsed) {
             s->user_cursor -= s->backlog_len;
             s->backlog_len = 0;
