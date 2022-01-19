@@ -9,30 +9,20 @@
 
 void markdown_parser_init(struct markdown_parser *s) {
     paragraph_parser_init(&s->paragraph_parser, &s->out_stream);
-    s->in_parag = false;
 
     out_stream_init(&s->out_stream);
     out_stream_write_str(&s->out_stream, "<!DOCTYPE html>\n<html>\n    <head>\n        <link rel=\"stylesheet\" href=\"style.css\">\n    </head>\n    <body>\n");
 }
 
 void markdown_parse(struct markdown_parser *s, struct parser_char *pch) {
-    pch->parsed = true;
-    pch->move_count = 1;
+    paragraph_parse(&s->paragraph_parser, pch);
 
-    if(s->in_parag) {
-        s->in_parag = paragraph_parse(&s->paragraph_parser, pch);
-    } else if(pch->type != PCT_END) {
-        s->in_parag = paragraph_parse_start(&s->paragraph_parser, pch);
-    }
-
-    if(pch->type == PCT_END) {
+    if(pch->type == PCT_END && pch->parsed) {
         out_stream_write_str(&s->out_stream, "    </body>\n</html>\n");
         out_stream_flush(&s->out_stream);
     }
 }
 
 void markdown_parser_prepare_for_forced_chars(struct markdown_parser *s) {
-    if(s->in_parag) {
-        paragraph_parser_prepare_for_forced_chars(&s->paragraph_parser);
-    }
+    paragraph_parser_prepare_for_forced_chars(&s->paragraph_parser);
 }

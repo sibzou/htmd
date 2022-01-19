@@ -17,46 +17,32 @@ static void paragraph_parser_end(struct paragraph_parser *s) {
     out_stream_write_str(s->out_stream, "</p>\n");
 }
 
-bool paragraph_parse_start(struct paragraph_parser *s,
-        struct parser_char *pch) {
+void paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
+    int prev_step = s->text_flow_parser.step;
+    text_flow_parse(&s->text_flow_parser, pch);
 
-    bool res = text_flow_parse_start(&s->text_flow_parser, pch);
-
-    if(res) {
+    if(prev_step == TFS_FLOW_OUT && s->text_flow_parser.step == TFS_WORD_IN) {
         out_stream_write_str(s->out_stream, "        <p>");
-    }
-
-    return res;
-}
-
-bool paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
-    pch->parsed = true;
-    pch->move_count = 1;
-
-    if(pch->type == PCT_END) {
-        paragraph_parser_end(s);
-        return false;
-    } else {
-        int prev_in_word = s->text_flow_parser.in_word;
-        text_flow_parse(&s->text_flow_parser, pch);
-
-        if(!s->text_flow_parser.in_word) {
-            if(prev_in_word) {
+    } else if(s->text_flow_parser.step != TFS_FLOW_OUT) {
+        if(s->text_flow_parser.step == TFS_WORD_OUT) {
+            if(prev_step == TFS_WORD_IN) {
                 s->out_line = false;
             }
 
-            if(pch->c == '\n') {
+            if(pch->type != PCT_END && pch->c == '\n' && pch->parsed) {
                 if(s->out_line) {
                     paragraph_parser_end(s);
-                    return false;
+                    text_flow_parser_reset(&s->text_flow_parser);
                 } else {
                     s->out_line = true;
                 }
             }
         }
-    }
 
-    return true;
+        if(pch->type == PCT_END && pch->parsed) {
+            paragraph_parser_end(s);
+        }
+    }
 }
 
 void paragraph_parser_prepare_for_forced_chars(struct paragraph_parser *s) {
