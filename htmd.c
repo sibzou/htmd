@@ -1,135 +1,100 @@
-#include <unistd.h>
 #include <stdbool.h>
-#include <err.h>
-#include <stdlib.h>
 
 #include "misc.h"
 #include "htmd.h"
 #include "textflow.h"
 #include "paragraph.h"
+#include "instream.h"
 #include "outstream.h"
 #include "markdown.h"
 
-static void input_buffer_init(struct input_buffer *s) {
-    s->read_buf_len = 0;
-    s->read_buf_unparse_start = BUFFER_SIZE;
-    s->backlog_start = 0;
-    s->backlog_len = 0;
-    s->user_cursor = 0;
+static void backlog_init(struct backlog *s) {
+    s->start = 0;
+    s->len = 0;
 }
 
-static void copy_unparsed_data_to_backlog(struct input_buffer *s,
+static void force_parse(struct parser_char *pch, struct backlog *backlog,
         struct markdown_parser *mdp) {
 
-    // if there are more bytes to copy than space in the backlog
-    if(s->read_buf_len - s->read_buf_unparse_start
-            > BUFFER_SIZE - s->backlog_len) {
+    pch->type = PCT_FORCED;
+    pch->c = backlog->buf[backlog->start];
+    pch->pos = 0;
 
-        // we say to markdown "hey, you'll have to force parse some bytes"
-        markdown_parser_prepare_for_forced_chars(mdp);
+    while(pch->pos == 0) {
+        markdown_parse(mdp, pch);
     }
 
-    for(int i = s->read_buf_unparse_start; i < s->read_buf_len; i++) {
-        if(s->backlog_len < BUFFER_SIZE) {
-            int offset = (s->backlog_start + s->backlog_len) % BUFFER_SIZE;
-            s->backlog[offset] = s->read_buf[i];
-            s->backlog_len++;
-        } else {
-            struct parser_char pch;
-            pch.c = s->backlog[s->backlog_start];
-            pch.type = PCT_FORCED;
-
-            // we force parsing if there is no more space in the backlog
-            markdown_parse(mdp, &pch);
-
-            s->backlog[s->backlog_start] = s->read_buf[i];
-            s->backlog_start = (s->backlog_start + 1) % BUFFER_SIZE;
-
-            /* after forced parsing, we start parse again from the first saved
-             * data
-             */
-            s->user_cursor = 0;
-        }
-    }
+    backlog->start = (backlog->start + 1) % BUFFER_SIZE;
+    backlog->len--;
 }
 
-static void read_fd_if_needed(struct input_buffer *s, int read_fd,
+static void read_in_stream_if_needed(struct parser_char *pch,
+        struct backlog *backlog, struct in_stream *in_stream,
         struct markdown_parser *mdp) {
 
-    // if we are out of saved data, we continue to read the input stream
-    if(s->user_cursor >= s->backlog_len + s->read_buf_len) {
-        if(s->read_buf_unparse_start == BUFFER_SIZE) {
-            s->user_cursor = 0;
-        } else {
-            s->user_cursor -= s->read_buf_unparse_start;
-        }
-
-        copy_unparsed_data_to_backlog(s, mdp);
-        s->read_buf_len = read(read_fd, s->read_buf, BUFFER_SIZE);
-
-        if(s->read_buf_len == -1) {
-            err(EXIT_FAILURE, "can't read the input");
-        }
-
-        s->read_buf_unparse_start = BUFFER_SIZE;
+    if(pch->pos < backlog->len) {
+        return;
     }
+
+    char c;
+    bool is_end = in_stream_read(in_stream, &c);
+
+    if(is_end) {
+        return;
+    } else if(backlog->len >= BUFFER_SIZE) {
+        force_parse(pch, backlog, mdp);
+    }
+
+    int offset = (backlog->start + backlog->len) % BUFFER_SIZE;
+    backlog->buf[offset] = c;
+    backlog->len++;
 }
 
-// get the real character from user_cursor
-static void get_user_cursor_char(struct input_buffer *s,
-        struct parser_char *pch) {
-
-    if(s->user_cursor < s->backlog_len) {
-        pch->c = s->backlog[(s->backlog_start + s->user_cursor) % BUFFER_SIZE];
-        pch->type = PCT_NORMAL;
-    } else if(s->user_cursor < s->backlog_len + s->read_buf_len) {
-        pch->c = s->read_buf[s->user_cursor - s->backlog_len];
-        pch->type = PCT_NORMAL;
-    } else {
+static void get_parser_char(struct parser_char *pch, struct backlog *backlog) {
+    if(pch->pos >= backlog->len) {
         pch->type = PCT_END;
+    } else {
+        pch->type = PCT_NORMAL;
+        int offset = (backlog->start + pch->pos) % BUFFER_SIZE;
+        pch->c = backlog->buf[offset];
     }
 }
 
-static bool handle_parse_result(struct input_buffer *s, struct parser_char *pch) {
+static bool handle_parse_result(struct parser_char *pch,
+        struct backlog *backlog) {
+
+    pch->pos += pch->move_count; // deprecated
+
     if(pch->type == PCT_END && pch->parsed) {
         return true;
-    } else if(s->user_cursor < s->backlog_len) {
-        if(pch->parsed) {
-            s->backlog_start = (s->backlog_start + s->user_cursor + 1) % BUFFER_SIZE;
-            s->backlog_len -= s->user_cursor + 1;
-            s->user_cursor = -1;
-        }
-    } else if(s->user_cursor <= s->backlog_len + s->read_buf_len) {
-        if(pch->parsed) {
-            s->user_cursor -= s->backlog_len;
-            s->backlog_len = 0;
-            s->read_buf_unparse_start = BUFFER_SIZE;
-        } else if(s->read_buf_unparse_start == BUFFER_SIZE) {
-            s->read_buf_unparse_start = s->user_cursor - s->backlog_len;
-        }
+    } else if(pch->parsed) {
+        backlog->start = (backlog->start + pch->pos) % BUFFER_SIZE;
+        backlog->len -= pch->pos;
+        pch->pos = 0;
     }
 
-    s->user_cursor += pch->move_count;
     return false;
 }
 
 int main(int argc, char *argv[]) {
-    int read_fd = STDIN_FILENO;
-    struct input_buffer input_buffer;
+    struct in_stream in_stream;
+    struct backlog backlog;
+    struct parser_char pch;
     struct markdown_parser mdp;
 
-    input_buffer_init(&input_buffer);
+    in_stream_init(&in_stream);
+    backlog_init(&backlog);
     markdown_parser_init(&mdp);
 
-    while(true) {
-        struct parser_char pch;
+    pch.pos = 0;
 
-        read_fd_if_needed(&input_buffer, read_fd, &mdp);
-        get_user_cursor_char(&input_buffer, &pch);
+    while(true) {
+        read_in_stream_if_needed(&pch, &backlog, &in_stream, &mdp);
+        get_parser_char(&pch, &backlog);
 
         markdown_parse(&mdp, &pch);
 
-        if(handle_parse_result(&input_buffer, &pch)) {
+        if(handle_parse_result(&pch, &backlog)) {
             break;
         }
     }
