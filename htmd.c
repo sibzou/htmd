@@ -26,6 +26,7 @@ static void force_parse(struct parser_char *pch, struct backlog *backlog,
 
     backlog->start = (backlog->start + 1) % BUFFER_SIZE;
     backlog->len--;
+    pch->pos--;
 }
 
 static void read_in_stream_if_needed(struct parser_char *pch,
