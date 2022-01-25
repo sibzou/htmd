@@ -19,7 +19,6 @@ struct text_flow_parser {
         LKS_WRITE_TEXT
     } link_step;
 
-    int link_start_distance;
     int link_url_start;
     int link_url_end;
     int link_text_start;

@@ -5,11 +5,10 @@ struct parser_char {
         PCT_END,
         PCT_FORCED
     } type;
-
     int pos;
-    bool parsed;
 
-    int move_count; // deprecated
+    bool parsed;
+    int next_pos;
 };
 
 struct backlog {

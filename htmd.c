@@ -20,13 +20,13 @@ static void force_parse(struct parser_char *pch, struct backlog *backlog,
     pch->c = backlog->buf[backlog->start];
     pch->pos = 0;
 
-    while(pch->pos == 0) {
+    while(pch->next_pos == 0) {
         markdown_parse(mdp, pch);
     }
 
     backlog->start = (backlog->start + 1) % BUFFER_SIZE;
     backlog->len--;
-    pch->pos--;
+    pch->pos = pch->next_pos - 1;
 }
 
 static void read_in_stream_if_needed(struct parser_char *pch,
@@ -64,7 +64,7 @@ static void get_parser_char(struct parser_char *pch, struct backlog *backlog) {
 static bool handle_parse_result(struct parser_char *pch,
         struct backlog *backlog) {
 
-    pch->pos += pch->move_count; // deprecated
+    pch->pos = pch->next_pos;
 
     if(pch->type == PCT_END && pch->parsed) {
         return true;
