@@ -5,5 +5,3 @@ struct markdown_parser {
 
 void markdown_parser_init(struct markdown_parser *s);
 void markdown_parse(struct markdown_parser *s, struct parser_char *pch);
-
-void markdown_parser_prepare_for_forced_chars(struct markdown_parser *s);

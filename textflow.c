@@ -142,7 +142,10 @@ static void link_parse(struct text_flow_parser *s, struct parser_char *pch) {
     pch->parsed = false;
     pch->next_pos = pch->pos + 1;
 
-    if(pch->type == PCT_END || pch->c == '\n') {
+    if(pch->type == PCT_FORCED) {
+        s->link_step = LKS_NONE;
+        pch->next_pos = pch->pos;
+    } else if(pch->type == PCT_END || pch->c == '\n') {
         link_cancel_parse(s, pch);
     } else if(s->link_step == LKS_OPEN_BRACKET) {
         if(pch->type != PCT_FORCED && pch->c == '[') {
@@ -205,8 +208,4 @@ void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
             }
         }
     }
-}
-
-void text_flow_parser_prepare_for_forced_chars(struct text_flow_parser *s) {
-    link_parser_reset(s);
 }

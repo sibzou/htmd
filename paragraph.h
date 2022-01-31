@@ -8,5 +8,3 @@ void paragraph_parser_init(struct paragraph_parser *s,
         struct out_stream *out_stream);
 
 void paragraph_parse(struct paragraph_parser *s, struct parser_char *pch);
-
-void paragraph_parser_prepare_for_forced_chars(struct paragraph_parser *s);

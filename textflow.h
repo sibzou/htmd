@@ -33,5 +33,3 @@ void text_flow_parser_init(struct text_flow_parser *s,
 void text_flow_parser_reset(struct text_flow_parser *s);
 
 void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch);
-
-void text_flow_parser_prepare_for_forced_chars(struct text_flow_parser *s);
