@@ -20,9 +20,9 @@ static void force_parse(struct parser_char *pch, struct backlog *backlog,
     pch->c = backlog->buf[backlog->start];
     pch->pos = 0;
 
-    while(pch->next_pos == 0) {
+    do {
         markdown_parse(mdp, pch);
-    }
+    } while(pch->next_pos == 0);
 
     backlog->start = (backlog->start + 1) % BUFFER_SIZE;
     backlog->len--;
