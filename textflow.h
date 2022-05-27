@@ -24,12 +24,7 @@ struct text_flow_parser {
     int link_text_start;
     int link_text_end;
     int link_end;
-    struct out_stream *out_stream;
 };
 
-void text_flow_parser_init(struct text_flow_parser *s,
-        struct out_stream *out_stream);
-
-void text_flow_parser_reset(struct text_flow_parser *s);
-
+void text_flow_parser_init(struct text_flow_parser *s);
 void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch);

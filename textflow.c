@@ -5,18 +5,11 @@
 #include "textflow.h"
 #include "outstream.h"
 
-void text_flow_parser_init(struct text_flow_parser *s,
-        struct out_stream *out_stream) {
-
-    text_flow_parser_reset(s);
-    s->out_stream = out_stream;
-}
-
 static void link_parser_reset(struct text_flow_parser *s) {
     s->link_step = LKS_OPEN_BRACKET;
 }
 
-void text_flow_parser_reset(struct text_flow_parser *s) {
+void text_flow_parser_init(struct text_flow_parser *s) {
     s->step = TFS_FLOW_OUT;
     link_parser_reset(s);
 }
@@ -36,11 +29,12 @@ static void prepare_for_link_url_write(struct text_flow_parser *s,
         pch->next_pos = pch->pos;
     } else {
         if(s->step == TFS_WORD_OUT) {
-            out_stream_write_char(s->out_stream, ' ');
+            pch->res = PCR_SPACE_AND_LINK_URL_BEGIN;
             s->step = TFS_WORD_IN;
+        } else {
+            pch->res = PCR_LINK_URL_BEGIN;
         }
 
-        out_stream_write_str(s->out_stream, "<a href=\"");
         s->link_step = LKS_WRITE_URL;
         s->link_end = pch->pos + 1;
 
@@ -118,15 +112,15 @@ static void link_control_write(struct text_flow_parser *s,
 
     if(s->link_step == LKS_WRITE_URL) {
         if(pch->pos == s->link_url_end) {
-            out_stream_write_str(s->out_stream, "\">");
+            pch->res = PCR_LINK_TEXT_BEGIN;
             s->link_step = LKS_CONTROL_TEXT;
             pch->next_pos = s->link_text_start;
         } else {
-            out_stream_write_char(s->out_stream, pch->c);
+            pch->res = PCR_CHAR;
         }
     } else if(s->link_step == LKS_CONTROL_TEXT) {
         if(pch->pos == s->link_text_end) {
-            out_stream_write_str(s->out_stream, "</a>");
+            pch->res = PCR_LINK_END;
             link_parser_reset(s);
 
             pch->next_pos = s->link_end;
@@ -141,6 +135,7 @@ static void link_control_write(struct text_flow_parser *s,
 static void link_parse(struct text_flow_parser *s, struct parser_char *pch) {
     pch->parsed = false;
     pch->next_pos = pch->pos + 1;
+    pch->res = PCR_NONE;
 
     if(pch->type == PCT_FORCED) {
         s->link_step = LKS_NONE;
@@ -171,6 +166,7 @@ void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
     } else {
         pch->parsed = s->link_step != LKS_WRITE_TEXT;
         pch->next_pos = pch->pos + 1;
+        pch->res = PCR_NONE;
 
         if(pch->type == PCT_END) {
             return;
@@ -178,7 +174,7 @@ void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
 
         if(s->step == TFS_WORD_IN) {
             if(is_a_word_char(pch->c)) {
-                out_stream_write_char(s->out_stream, pch->c);
+                pch->res = PCR_CHAR;
             } else {
                 s->step = TFS_WORD_OUT;
 
@@ -193,7 +189,7 @@ void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
         } else {
             if(is_a_word_char(pch->c)) {
                 if(s->step == TFS_WORD_OUT) {
-                    out_stream_write_char(s->out_stream, ' ');
+                    pch->res = PCR_SPACE;
                 }
 
                 s->step = TFS_WORD_IN;

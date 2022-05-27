@@ -7,6 +7,7 @@
 #include "instream.h"
 #include "outstream.h"
 #include "markdown.h"
+#include "html.h"
 
 static void backlog_init(struct backlog *s) {
     s->start = 0;
@@ -82,21 +83,28 @@ int main(int argc, char *argv[]) {
     struct backlog backlog;
     struct parser_char pch;
     struct markdown_parser mdp;
+    struct html html;
 
     in_stream_init(&in_stream);
     backlog_init(&backlog);
     markdown_parser_init(&mdp);
+    html_init(&html);
 
     pch.pos = 0;
+
+    html_write_header(&html);
 
     while(true) {
         read_in_stream_if_needed(&pch, &backlog, &in_stream, &mdp);
         get_parser_char(&pch, &backlog);
 
         markdown_parse(&mdp, &pch);
+        html_handle_markdown_result(&html, &pch);
 
         if(handle_parse_result(&pch, &backlog)) {
             break;
         }
     }
+
+    html_write_footer(&html);
 }

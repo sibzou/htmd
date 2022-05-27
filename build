@@ -4,5 +4,6 @@ gcc htmd.c \
     paragraph.c \
     instream.c \
     outstream.c \
+    html.c \
     -o htmd \
     -Wall

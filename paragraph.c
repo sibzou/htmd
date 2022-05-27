@@ -6,15 +6,8 @@
 #include "textflow.h"
 #include "paragraph.h"
 
-void paragraph_parser_init(struct paragraph_parser *s,
-        struct out_stream *out_stream) {
-
-    text_flow_parser_init(&s->text_flow_parser, out_stream);
-    s->out_stream = out_stream;
-}
-
-static void paragraph_parser_end(struct paragraph_parser *s) {
-    out_stream_write_str(s->out_stream, "</p>\n");
+void paragraph_parser_init(struct paragraph_parser *s) {
+    text_flow_parser_init(&s->text_flow_parser);
 }
 
 void paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
@@ -22,7 +15,7 @@ void paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
     text_flow_parse(&s->text_flow_parser, pch);
 
     if(prev_step == TFS_FLOW_OUT && s->text_flow_parser.step == TFS_WORD_IN) {
-        out_stream_write_str(s->out_stream, "        <p>");
+        pch->res = PCR_PARAG_BEGIN;
     } else if(s->text_flow_parser.step != TFS_FLOW_OUT) {
         if(s->text_flow_parser.step == TFS_WORD_OUT) {
             if(prev_step == TFS_WORD_IN) {
@@ -31,8 +24,8 @@ void paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
 
             if(pch->type != PCT_END && pch->c == '\n' && pch->parsed) {
                 if(s->out_line) {
-                    paragraph_parser_end(s);
-                    text_flow_parser_reset(&s->text_flow_parser);
+                    pch->res = PCR_PARAG_END;
+                    text_flow_parser_init(&s->text_flow_parser);
                 } else {
                     s->out_line = true;
                 }
@@ -40,7 +33,7 @@ void paragraph_parse(struct paragraph_parser *s, struct parser_char *pch) {
         }
 
         if(pch->type == PCT_END && pch->parsed) {
-            paragraph_parser_end(s);
+            pch->res = PCR_PARAG_END;
         }
     }
 }
