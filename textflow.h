@@ -1,10 +1,4 @@
-struct text_flow_parser {
-    enum {
-        TFS_FLOW_OUT,
-        TFS_WORD_IN,
-        TFS_WORD_OUT
-    } step;
-
+struct link_parser {
     enum {
         LKS_NONE,
         LKS_OPEN_BRACKET,
@@ -17,13 +11,23 @@ struct text_flow_parser {
         LKS_WRITE_URL,
         LKS_CONTROL_TEXT,
         LKS_WRITE_TEXT
-    } link_step;
+    } step;
 
-    int link_url_start;
-    int link_url_end;
-    int link_text_start;
-    int link_text_end;
-    int link_end;
+    int url_start;
+    int url_end;
+    int text_start;
+    int text_end;
+    int end;
+};
+
+struct text_flow_parser {
+    enum {
+        TFS_FLOW_OUT,
+        TFS_WORD_IN,
+        TFS_WORD_OUT
+    } step;
+
+    struct link_parser link;
 };
 
 void text_flow_parser_init(struct text_flow_parser *s);
