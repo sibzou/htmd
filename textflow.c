@@ -195,12 +195,8 @@ void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
                 s->step = TFS_WORD_IN;
                 pch->parsed = false;
                 pch->next_pos = pch->pos;
-            } else {
-                if(s->link_step == LKS_WRITE_TEXT) {
-                    s->link_step = LKS_CONTROL_TEXT;
-                } else {
-                    link_parser_reset(s);
-                }
+            } else if(s->link_step == LKS_WRITE_TEXT) {
+                s->link_step = LKS_CONTROL_TEXT;
             }
         }
     }
