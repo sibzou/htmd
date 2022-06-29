@@ -9,7 +9,6 @@ struct link_parser {
         LKS_URL_END,
         LKS_CLOSE_PARENTHESIS,
         LKS_WRITE_URL,
-        LKS_CONTROL_TEXT,
         LKS_WRITE_TEXT
     } step;
 

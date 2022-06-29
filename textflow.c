@@ -107,12 +107,12 @@ static void link_control_write(struct link_parser *s, struct parser_char *pch) {
     if(s->step == LKS_WRITE_URL) {
         if(pch->pos == s->url_end) {
             pch->res = PCR_LINK_TEXT_BEGIN;
-            s->step = LKS_CONTROL_TEXT;
+            s->step = LKS_WRITE_TEXT;
             pch->next_pos = s->text_start;
         } else {
             pch->res = PCR_CHAR;
         }
-    } else if(s->step == LKS_CONTROL_TEXT) {
+    } else if(s->step == LKS_WRITE_TEXT) {
         if(pch->pos == s->text_end) {
             pch->res = PCR_LINK_END;
             link_parser_reset(s);
@@ -120,8 +120,7 @@ static void link_control_write(struct link_parser *s, struct parser_char *pch) {
             pch->next_pos = s->end;
             pch->parsed = true;
         } else {
-            s->step = LKS_WRITE_TEXT;
-            pch->next_pos = pch->pos;
+            pch->res = PCR_CHAR;
         }
     }
 }
@@ -155,10 +154,10 @@ static bool is_a_word_char(char c) {
 }
 
 void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
-    if(s->link.step != LKS_NONE && s->link.step != LKS_WRITE_TEXT) {
+    if(s->link.step != LKS_NONE) {
         link_parse(s, pch);
     } else {
-        pch->parsed = s->link.step != LKS_WRITE_TEXT;
+        pch->parsed = true;
         pch->next_pos = pch->pos + 1;
         pch->res = PCR_NONE;
 
@@ -171,14 +170,7 @@ void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
                 pch->res = PCR_CHAR;
             } else {
                 s->step = TFS_WORD_OUT;
-
-                if(s->link.step != LKS_WRITE_TEXT) {
-                    link_parser_reset(&s->link);
-                }
-            }
-
-            if(s->link.step == LKS_WRITE_TEXT) {
-                s->link.step = LKS_CONTROL_TEXT;
+                link_parser_reset(&s->link);
             }
         } else {
             if(is_a_word_char(pch->c)) {
@@ -189,8 +181,6 @@ void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
                 s->step = TFS_WORD_IN;
                 pch->parsed = false;
                 pch->next_pos = pch->pos;
-            } else if(s->link.step == LKS_WRITE_TEXT) {
-                s->link.step = LKS_CONTROL_TEXT;
             }
         }
     }
