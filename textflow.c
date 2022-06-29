@@ -172,16 +172,14 @@ void text_flow_parse(struct text_flow_parser *s, struct parser_char *pch) {
                 s->step = TFS_WORD_OUT;
                 link_parser_reset(&s->link);
             }
-        } else {
-            if(is_a_word_char(pch->c)) {
-                if(s->step == TFS_WORD_OUT) {
-                    pch->res = PCR_SPACE;
-                }
-
-                s->step = TFS_WORD_IN;
-                pch->parsed = false;
-                pch->next_pos = pch->pos;
+        } else if(is_a_word_char(pch->c)) {
+            if(s->step == TFS_WORD_OUT) {
+                pch->res = PCR_SPACE;
             }
+
+            s->step = TFS_WORD_IN;
+            pch->parsed = false;
+            pch->next_pos = pch->pos;
         }
     }
 }
